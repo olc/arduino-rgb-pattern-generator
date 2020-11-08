@@ -9,9 +9,10 @@
 #define PORTD5          5
 #define PORTD6          6
 #define PORTD7          7
-#define PIN_DIRECTION   0b11111100          ; DDD2 to DDD7 as output
+#define PIN_DIRECTION   0b11111100          // DDD2 to DDD7 as output
 
-#define PORT_IO         DDRD
+#define DDR_VIDEO       DDRD                // Video (RGB + SYNC) on port D
+#define PORT_VIDEO      PORTD
 
 #define BLACK           0x00
 #define RED             (1<<PORTD2)
@@ -29,9 +30,9 @@
 #define HSYNC_OFF       (1<<HSYNC_BIT)
 #define VSYNC_OFF       (1<<VSYNC_BIT)
 #define CSYNC_OFF       (1<<CSYNC_BIT)
-#define HSYNC_ON        0x00
-#define VSYNC_ON        0x00
-#define CSYNC_ON        0x00
+#define HSYNC_ON        0x00                // it's on by default
+#define VSYNC_ON        0x00                // it's on by default
+#define CSYNC_ON        0x00                // it's on by default
 #define SYNC_PINS_MASK  ~(HSYNC_OFF|VSYNC_OFF|CSYNC_OFF)
 
 #define REG_TMP         r17
@@ -41,40 +42,40 @@
 
   ; Set hsync pin to on
   .MACRO set_hsync_on       ; 2C
-  cbi PORT_IO, HSYNC_BIT
+  cbi PORT_VIDEI, HSYNC_BIT
   .ENDM
 
   ; Set hsync pin to off
   .MACRO set_hsync_off      ; 2C
-  sbi PORT_IO, HSYNC_BIT
+  sbi PORT_VIDEO, HSYNC_BIT
   .ENDM
 
   ; Set vsync pin to on
   .MACRO set_vsync_on       ; 2C
-  cbi PORT_IO, VSYNC_BIT
+  cbi PORT_VIDEO, VSYNC_BIT
   .ENDM
 
   ; Set vsync pin to off
   .MACRO set_vsync_off      ; 2C
-  sbi PORT_IO, VSYNC_BIT
+  sbi PORT_VIDEO, VSYNC_BIT
   .ENDM
 
   ; Set csync pin to on
   .MACRO set_csync_on       ; 2C
-  cbi PORT_IO, CSYNC_BIT
+  cbi PORT_VIDEO, CSYNC_BIT
   .ENDM
 
   ; Set csync pin to off
   .MACRO set_csync_off      ; 2C
-  sbi PORT_IO, CSYNC_BIT
+  sbi PORT_VIDEO, CSYNC_BIT
   .ENDM
 
   ; Set sync pins
   .MACRO set_sync pins                    ; total: 4C
-  in REG_TMP, PORT_IO                     ; 1C
+  in REG_TMP, PORT_VIDEO                  ; 1C
   andi REG_TMP, SYNC_PINS_MASK            ; 1C
   ori REG_TMP, &pins                      ; 1C   
-  out PORT_IO, REG_TMP                    ; 1C
+  out PORT_VIDEO, REG_TMP                 ; 1C
   .ENDM
 
   ; Delay n * 0,25us
@@ -109,10 +110,10 @@
 
   ; Set the RGB pins
   .MACRO set_color color                  ; total: 4C
-  in REG_TMP, PORT_IO                     ; 1C
+  in REG_TMP, PORT_VIDEO                  ; 1C
   andi REG_TMP, RGB_PINS_MASK             ; 1C
   ori REG_TMP, &color                     ; 1C
-  out PORT_IO, REG_TMP                    ; 1C
+  out PORT_VIDEO, REG_TMP                 ; 1C
   .ENDM
 
   ; Show part of line
@@ -181,13 +182,13 @@ v_fp:
 main:
   ; PinMode(PORTD, PIN_DIRECTION)
   ldi REG_TMP, PIN_DIRECTION
-  out PORTD, REG_TMP
+  out DDR_VIDEO, REG_TMP
 
   ; Initialize outputs
   cli
   set_sync VSYNC_OFF|HSYNC_OFF|CSYNC_OFF
   set_color BLACK
-
+  
 loop:
   v_sync
   v_back_porch
