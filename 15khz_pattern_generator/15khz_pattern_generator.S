@@ -30,9 +30,9 @@
 #define HSYNC_OFF       (1<<HSYNC_BIT)
 #define VSYNC_OFF       (1<<VSYNC_BIT)
 #define CSYNC_OFF       (1<<CSYNC_BIT)
-#define HSYNC_ON        0x00                // it's on by default
-#define VSYNC_ON        0x00                // it's on by default
-#define CSYNC_ON        0x00                // it's on by default
+#define HSYNC_ON        0x00                // just for clarity of code (it's on by default)
+#define VSYNC_ON        0x00                // just for clarity of code (it's on by default)
+#define CSYNC_ON        0x00                // just for clarity of code (it's on by default)
 #define SYNC_PINS_MASK  ~(HSYNC_OFF|VSYNC_OFF|CSYNC_OFF)
 
 #define REG_TMP         r17
