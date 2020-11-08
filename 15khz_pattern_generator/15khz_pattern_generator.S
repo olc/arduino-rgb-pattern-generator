@@ -205,7 +205,7 @@ v_disp:
   h_line MAGENTA,24                       ; 100C
   h_line RED,24                           ; 100C 
   h_line BLUE,24                          ; 100C
-  h_line WHITE,23                         ; 96C  
+  h_line BLACK,23                         ; 96C  
   nop                                     ; 1C
   nop                                     ; 1C
   nop                                     ; 1C     total: 787 (49.1875us)
