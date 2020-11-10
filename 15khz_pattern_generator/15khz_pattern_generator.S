@@ -71,17 +71,17 @@
   .ENDM
 
   ; Set sync pins
-  .MACRO set_sync pins                    ; total: 4C
+  .MACRO set_sync pins:req                ; total: 4C
   in REG_TMP, PORT_VIDEO                  ; 1C
   andi REG_TMP, SYNC_PINS_MASK            ; 1C
-  ori REG_TMP, &pins                      ; 1C   
+  ori REG_TMP, \pins                      ; 1C
   out PORT_VIDEO, REG_TMP                 ; 1C
   .ENDM
 
   ; Delay n * 0,25us
-  .MACRO delay count                      ; total: 4 * count
-  ldi REG_TMP, &count                     ; 1C
-1: 
+  .MACRO delay count:req                  ; total: 4 * count
+  ldi REG_TMP, \count                     ; 1C
+1:
   nop                                     ; 1C
   dec REG_TMP                             ; 1C
   brne 1b                                 ; 2C when branching, 1C otherwise
@@ -109,17 +109,17 @@
   .ENDM
 
   ; Set the RGB pins
-  .MACRO set_color color                  ; total: 4C
+  .MACRO set_color color:req              ; total: 4C
   in REG_TMP, PORT_VIDEO                  ; 1C
   andi REG_TMP, RGB_PINS_MASK             ; 1C
-  ori REG_TMP, &color                     ; 1C
+  ori REG_TMP, \color                     ; 1C
   out PORT_VIDEO, REG_TMP                 ; 1C
   .ENDM
 
   ; Show part of line
-  .MACRO h_line color duration            ; 4 * count + 5C 
-  set_color &color                        ; 4C
-  delay &duration                         ; 4 * count
+  .MACRO h_line color:req,duration:req    ; 4 * count + 5C
+  set_color \color                        ; 4C
+  delay \duration                         ; 4 * count
   .ENDM
 
   ; Generate a Vertical Frame Pulse
@@ -158,7 +158,7 @@ v_sync:
   .MACRO v_back_porch
   ldi REG_LC, 23                          ; 1C
 v_bp:
-  h_sync                                  ; 80C 
+  h_sync                                  ; 80C
   h_back_porch                            ; 99C
   h_line BLACK,196                        ; 788C
   h_front_porch                           ; 49C
@@ -173,12 +173,12 @@ v_fp:
   h_sync                                  ; 80C
   h_back_porch                            ; 99C
   h_line BLACK,196                        ; 788C
-  h_front_porch                           ; 49C     
+  h_front_porch                           ; 49C
   dec REG_LC                              ; 1C
   brne v_fp                               ; 2C when branching, 1C otherwise  total: 1019, 63.68us
   rjmp loop                               ; 2C
   .ENDM
-  
+
 main:
   ; PinMode(PORTD, PIN_DIRECTION)
   ldi REG_TMP, PIN_DIRECTION
@@ -188,7 +188,7 @@ main:
   cli
   set_sync VSYNC_OFF|HSYNC_OFF|CSYNC_OFF
   set_color BLACK
-  
+
 loop:
   v_sync
   v_back_porch
@@ -203,9 +203,9 @@ v_disp:
   h_line CYAN,23                          ; 96C
   h_line GREEN,24                         ; 100C
   h_line MAGENTA,24                       ; 100C
-  h_line RED,24                           ; 100C 
+  h_line RED,24                           ; 100C
   h_line BLUE,24                          ; 100C
-  h_line BLACK,23                         ; 96C  
+  h_line BLACK,23                         ; 96C
   nop                                     ; 1C
   nop                                     ; 1C
   nop                                     ; 1C     total: 787 (49.1875us)
