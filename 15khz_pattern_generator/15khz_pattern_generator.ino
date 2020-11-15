@@ -4,6 +4,9 @@
 //
 // Project is pure assembly, this is why this ino file is empty.
 //
+// Inputs
+//    PB0: Switch between patterns
+//
 // Outputs:
 //    PD2: Red
 //    PD3: Green
