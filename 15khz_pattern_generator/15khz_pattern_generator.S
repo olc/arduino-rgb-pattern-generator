@@ -194,7 +194,7 @@ v_fp:
   .MACRO grid_rows_block
   ldi REG_LC,36                           ; 1C
 3:
-  grid_row                                ; 788C
+  grid_row                                ; 788C + sync + porchs
   dec REG_LC                              ; 1C
   breq 4f                                 ; 2C when branching, otherwise 1C
   rjmp 3b                                 ; 2C
@@ -250,6 +250,41 @@ v_fp:
   h_front_porch                           ; 48C
   .ENDM
 
+  ; Draw v line for the cross pattern 
+  .MACRO cross_v_line
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line BLACK,96                         ; 388C, total: 788C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  set_color WHITE                         ; 4C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  h_line BLACK,96                         ; 388C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  h_front_porch                           ; 48C
+  .ENDM
+
+  ; Draw a 110-lines block in order to form the first
+  ; and second part of screen (before and after the
+  ; horizontal line)
+  .MACRO cross_v_line_block
+  ldi REG_LC,110                           ; 1C
+5:
+  cross_v_line                            ; 788C + sync + porchs
+  dec REG_LC                              ; 1C
+  breq 6f                                 ; 2C when branching, otherwise 1C
+  rjmp 5b                                 ; 2C
+6:
+  .ENDM
+
+  ; Draw an horizontal line for the cross pattern
+  ; code is actually the same as `grid_line_white`
+#define cross_h_line grid_line_white
+
 
 ; Debounce function: avoid bouncing when the pattern switch button
 ; is pressed
@@ -277,6 +312,7 @@ main:
 
 loop:
   rcall pattern_bars
+  rcall pattern_cross
   rcall pattern_grid
   rjmp loop
 
@@ -351,5 +387,34 @@ pattern_grid_back_porch_loop:
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_grid
+  rcall debounce
+  ret
+
+ ; Draw a grid pattern
+pattern_cross:
+  v_sync
+
+  ; Generate a Vertical Back Porch paying attention to have
+  ; the exact same timing than visible lines
+  ; (aka, 1 cycle before a line and 3 cycles after)
+  ldi REG_LC, 23                          ; 1C
+pattern_cross_back_porch_loop:
+  nop
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line BLACK,196                        ; 788C
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  brne pattern_cross_back_porch_loop      ; 2C when branching, 1C otherwise
+  nop                                     ; 1C
+ 
+  cross_v_line_block
+  cross_h_line
+  cross_h_line
+  cross_v_line_block
+
+  ; Read Pattern Switch Button State
+  sbic INPUTS_PIN, PATTERN_SWITCH
+  rjmp pattern_cross
   rcall debounce
   ret
