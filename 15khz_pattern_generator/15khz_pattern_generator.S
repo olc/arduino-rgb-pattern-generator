@@ -179,26 +179,25 @@ v_bp:
   ; Vertical Front Porch: 13 blank lines
   .MACRO v_front_porch
   ldi REG_LC, 13                          ; 1C
-v_fp:
+3:
   h_sync                                  ; 80C
   h_back_porch                            ; 98C
   h_line BLACK,196                        ; 788C
   h_front_porch                           ; 48C
   dec REG_LC                              ; 1C
-  brne v_fp                               ; 2C when branching, 1C otherwise  total: 1019, 63.68us
-  rjmp loop                               ; 2C
+  brne 3b                                 ; 2C when branching, 1C otherwise  total: 1019, 63.68us
   .ENDM  
 
   ; Draw a 36-lines block in order to form the grid
   ; between each horizontal white lines
   .MACRO grid_rows_block
   ldi REG_LC,36                           ; 1C
-3:
+4:
   grid_row                                ; 788C + sync + porchs
   dec REG_LC                              ; 1C
-  breq 4f                                 ; 2C when branching, otherwise 1C
-  rjmp 3b                                 ; 2C
-4:
+  breq 5f                                 ; 2C when branching, otherwise 1C
+  rjmp 4b                                 ; 2C
+5:
   .ENDM
 
   ; Draw a white line for the grid pattern
@@ -272,18 +271,75 @@ v_fp:
   ; and second part of screen (before and after the
   ; horizontal line)
   .MACRO cross_v_line_block
-  ldi REG_LC,110                           ; 1C
-5:
+  ldi REG_LC,110                          ; 1C
+6:
   cross_v_line                            ; 788C + sync + porchs
   dec REG_LC                              ; 1C
-  breq 6f                                 ; 2C when branching, otherwise 1C
-  rjmp 5b                                 ; 2C
-6:
+  breq 7f                                 ; 2C when branching, otherwise 1C
+  rjmp 6b                                 ; 2C
+7:
   .ENDM
 
   ; Draw an horizontal line for the cross pattern
   ; code is actually the same as `grid_line_white`
 #define cross_h_line grid_line_white
+
+  ; Draw an "dots" line for the dots pattern 
+  .MACRO dots_line
+  nop
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C  
+  delay 3                                 ; 12C, total line: 788C 
+  nop                                     ; 1C
+  nop                                     ; 1C    14  
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C
+  h_line BLACK,29                         ; 120C
+  nop                                     ; 1C
+  nop                                     ; 1C    126
+  set_color WHITE                         ; 4C    
+  set_color BLACK                         ; 4C    8
+  delay 2                                 ; 12C   14
+  nop                                     ; 1C
+  nop                                     ; 1C
+  h_front_porch                           ; 48C
+  nop
+  nop
+  nop
+  .ENDM
+
+  ; Draw a block a black lines for the dots pattern
+  .MACRO dots_black_block count:req
+  ldi REG_LC,\count                       ; 1C
+8:
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line BLACK,196                        ; 788C
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  breq 9f                                 ; 2C when branching, otherwise 1C
+  rjmp 8b                                 ; 2C
+9:
+  .ENDM
 
 
 ; Debounce function: avoid bouncing when the pattern switch button
@@ -314,6 +370,7 @@ loop:
   rcall pattern_bars
   rcall pattern_cross
   rcall pattern_grid
+  rcall pattern_dots
   rjmp loop
 
 
@@ -347,7 +404,7 @@ pattern_bar_lines_done:
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_bars
-  rcall debounce
+  call debounce
   ret
 
 
@@ -387,7 +444,7 @@ pattern_grid_back_porch_loop:
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_grid
-  rcall debounce
+  call debounce
   ret
 
  ; Draw a grid pattern
@@ -416,5 +473,54 @@ pattern_cross_back_porch_loop:
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_cross
-  rcall debounce
+  call debounce
+  ret
+
+   ; Draw a dots pattern
+pattern_dots:
+  v_sync
+
+  ; Generate a Vertical Back Porch paying attention to have
+  ; the exact same timing than visible lines
+  ; (aka, 1 cycle before a line and 3 cycles after)
+  ldi REG_LC, 23                          ; 1C
+pattern_dots_back_porch_loop:
+  nop
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line BLACK,196                        ; 788C
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  brne pattern_dots_back_porch_loop       ; 2C when branching, 1C otherwise
+  nop                                     ; 1C
+
+  dots_black_block 6
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 33
+  dots_line
+  dots_line
+  dots_black_block 6
+
+  v_front_porch
+
+  ; Read Pattern Switch Button State
+  sbic INPUTS_PIN, PATTERN_SWITCH
+  jmp pattern_dots
+  call debounce
   ret
