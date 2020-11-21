@@ -2,6 +2,19 @@
 
 This are RGB Pattern Generator projects designed for Arduino boards.
 
+7 different patterns are provided:
+
+- 8 colored vertical bars
+- 8 colored vertical bars of first half part of screen then plain red shape
+  second part
+- 8 colored vertical bars of first half part of screen then plain green shape
+  second part
+- 8 colored vertical bars of first half part of screen then plain blue shape
+  second part
+- cross
+- grid
+- dots
+
 ## 15 KHz Pattern Generator
 
 This generator is designed for 15 KHz Arcade Monitors. It is based on 16 MHz
