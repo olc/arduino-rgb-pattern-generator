@@ -267,11 +267,11 @@ v_bp:
   h_front_porch                           ; 48C
   .ENDM
 
-  ; Draw a 110-lines block in order to form the first
+  ; Draw a 111-lines block in order to form the first
   ; and second part of screen (before and after the
   ; horizontal line)
   .MACRO cross_v_line_block
-  ldi REG_LC,110                          ; 1C
+  ldi REG_LC,111                          ; 1C
 6:
   cross_v_line                            ; 788C + sync + porchs
   dec REG_LC                              ; 1C
