@@ -47,6 +47,7 @@
 
 #define REG_TMP         r17
 #define REG_LC          r18
+#define REG_COLOR       r19
 
   .global main
 
@@ -167,18 +168,6 @@
   ; Vertical Back Porch: 23 blank lines
   .MACRO v_back_porch count=23
   ldi REG_LC, \count                      ; 1C
-v_bp:
-  h_sync                                  ; 80C
-  h_back_porch                            ; 98C
-  h_line BLACK,196                        ; 788C
-  h_front_porch                           ; 48C
-  dec REG_LC                              ; 1C
-  brne v_bp                               ; 2C when branching, 1C otherwise  total: 1019, 63.68us
-  .ENDM
-
-  ; Vertical Front Porch: 13 blank lines
-  .MACRO v_front_porch
-  ldi REG_LC, 13                          ; 1C
 3:
   h_sync                                  ; 80C
   h_back_porch                            ; 98C
@@ -186,18 +175,30 @@ v_bp:
   h_front_porch                           ; 48C
   dec REG_LC                              ; 1C
   brne 3b                                 ; 2C when branching, 1C otherwise  total: 1019, 63.68us
+  .ENDM
+
+  ; Vertical Front Porch: 13 blank lines
+  .MACRO v_front_porch
+  ldi REG_LC, 13                          ; 1C
+4:
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line BLACK,196                        ; 788C
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  brne 4b                                 ; 2C when branching, 1C otherwise  total: 1019, 63.68us
   .ENDM  
 
   ; Draw a 36-lines block in order to form the grid
   ; between each horizontal white lines
   .MACRO grid_rows_block
   ldi REG_LC,36                           ; 1C
-4:
+5:
   grid_row                                ; 788C + sync + porchs
   dec REG_LC                              ; 1C
-  breq 5f                                 ; 2C when branching, otherwise 1C
-  rjmp 4b                                 ; 2C
-5:
+  breq 6f                                 ; 2C when branching, otherwise 1C
+  rjmp 5b                                 ; 2C
+6:
   .ENDM
 
   ; Draw a white line for the grid pattern
@@ -272,12 +273,12 @@ v_bp:
   ; horizontal line)
   .MACRO cross_v_line_block
   ldi REG_LC,111                          ; 1C
-6:
+7:
   cross_v_line                            ; 788C + sync + porchs
   dec REG_LC                              ; 1C
-  breq 7f                                 ; 2C when branching, otherwise 1C
-  rjmp 6b                                 ; 2C
-7:
+  breq 8f                                 ; 2C when branching, otherwise 1C
+  rjmp 7b                                 ; 2C
+8:
   .ENDM
 
   ; Draw an horizontal line for the cross pattern
@@ -330,17 +331,53 @@ v_bp:
   ; Draw a block a black lines for the dots pattern
   .MACRO dots_black_block count:req
   ldi REG_LC,\count                       ; 1C
-8:
+9:
   h_sync                                  ; 80C
   h_back_porch                            ; 98C
   h_line BLACK,196                        ; 788C
   h_front_porch                           ; 48C
   dec REG_LC                              ; 1C
-  breq 9f                                 ; 2C when branching, otherwise 1C
-  rjmp 8b                                 ; 2C
-9:
+  breq 10f                                ; 2C when branching, otherwise 1C
+  rjmp 9b                                 ; 2C
+10:
   .ENDM
 
+  ; Draw an 8-bars pattern on first half part of screen then
+  ; a plain color shape to the second half part
+  .MACRO display_bars_half_image plain_color:req
+  ldi REG_LC, 112                         ; 1C
+11:
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line WHITE,23                         ; 96C
+  h_line YELLOW,23                        ; 96C
+  h_line CYAN,23                          ; 96C
+  h_line GREEN,24                         ; 100C
+  h_line MAGENTA,24                       ; 100C
+  h_line RED,24                           ; 100C
+  h_line BLUE,24                          ; 100C
+  h_line BLACK,23                         ; 96C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  nop                                     ; 1C
+  nop                                     ; 1C    total: 788
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  breq 12f                                ; 2C when branching, 1C otherwise
+  rjmp 11b                                ; 2C
+12:
+
+  ldi REG_LC, 112                         ; 1C
+13:
+  h_sync                                  ; 80C
+  h_back_porch                            ; 98C
+  h_line \plain_color,196                 ; 788C 
+  h_front_porch                           ; 48C
+  dec REG_LC                              ; 1C
+  breq 14f                                ; 2C when branching, 1C otherwise
+  rjmp 13b                                ; 2C
+14:
+  .ENDM
 
   ;------------------------------------------------------------
   ; debounce: avoid bouncing when the pattern switch button
@@ -371,15 +408,18 @@ main:
   set_color BLACK                         ; 4C
 
 loop:
-  rcall pattern_bars
-  rcall pattern_cross
-  rcall pattern_grid
-  rcall pattern_dots
+  call pattern_bars
+  call pattern_bars_half_red
+  call pattern_bars_half_green
+  call pattern_bars_half_blue
+  call pattern_cross
+  call pattern_grid
+  call pattern_dots
   rjmp loop
 
 
   ;------------------------------------------------------------
-  ; Draw an 8 colored bars patter
+  ; Draw an 8 colored bars pattern
   ;------------------------------------------------------------
 pattern_bars:
   v_sync
@@ -412,6 +452,57 @@ pattern_bar_lines_done:
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_bars
+  call debounce
+  ret
+
+
+  ;------------------------------------------------------------
+  ; Draw an 8-bars pattern on first half part of screen then
+  ; a plain RED shape to the second half part
+  ;------------------------------------------------------------
+pattern_bars_half_red:
+  v_sync
+  v_back_porch
+  display_bars_half_image RED
+  v_front_porch
+
+  ; Read Pattern Switch Button State
+  sbic INPUTS_PIN, PATTERN_SWITCH
+  rjmp pattern_bars_half_red
+  call debounce
+  ret
+
+
+  ;------------------------------------------------------------
+  ; Draw an 8-bars pattern on first half part of screen then
+  ; a plain GREEN shape to the second half part
+  ;------------------------------------------------------------
+pattern_bars_half_green:
+  v_sync
+  v_back_porch
+  display_bars_half_image GREEN
+  v_front_porch
+
+  ; Read Pattern Switch Button State
+  sbic INPUTS_PIN, PATTERN_SWITCH
+  rjmp pattern_bars_half_green
+  call debounce
+  ret
+
+
+  ;------------------------------------------------------------
+  ; Draw an 8-bars pattern on first half part of screen then
+  ; a plain BLUE shape to the second half part
+  ;------------------------------------------------------------
+pattern_bars_half_blue:
+  v_sync
+  v_back_porch
+  display_bars_half_image BLUE
+  v_front_porch
+
+  ; Read Pattern Switch Button State
+  sbic INPUTS_PIN, PATTERN_SWITCH
+  rjmp pattern_bars_half_blue
   call debounce
   ret
 
