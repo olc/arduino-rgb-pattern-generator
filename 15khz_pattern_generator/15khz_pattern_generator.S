@@ -401,6 +401,8 @@ pattern_bar_lines_loop:
   rjmp pattern_bar_lines_loop             ; 2C
 pattern_bar_lines_done:
 
+  v_front_porch
+
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_bars
@@ -441,6 +443,8 @@ pattern_grid_back_porch_loop:
   grid_rows_block
   grid_line_white
 
+  v_front_porch
+
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
   rjmp pattern_grid
@@ -464,11 +468,15 @@ pattern_cross_back_porch_loop:
   dec REG_LC                              ; 1C
   brne pattern_cross_back_porch_loop      ; 2C when branching, 1C otherwise
   nop                                     ; 1C
- 
+
+  cross_h_line
   cross_v_line_block
   cross_h_line
   cross_h_line
   cross_v_line_block
+  cross_h_line
+
+  v_front_porch
 
   ; Read Pattern Switch Button State
   sbic INPUTS_PIN, PATTERN_SWITCH
