@@ -469,12 +469,10 @@ pattern_cross_back_porch_loop:
   brne pattern_cross_back_porch_loop      ; 2C when branching, 1C otherwise
   nop                                     ; 1C
 
-  cross_h_line
   cross_v_line_block
   cross_h_line
   cross_h_line
   cross_v_line_block
-  cross_h_line
 
   v_front_porch
 
