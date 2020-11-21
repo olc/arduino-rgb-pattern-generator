@@ -291,36 +291,36 @@ v_bp:
   h_back_porch                            ; 98C  
   delay 3                                 ; 12C, total line: 788C 
   nop                                     ; 1C
-  nop                                     ; 1C    14  
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C
   h_line BLACK,29                         ; 120C
   nop                                     ; 1C
-  nop                                     ; 1C    126
+  nop                                     ; 1C
   set_color WHITE                         ; 4C    
-  set_color BLACK                         ; 4C    8
-  delay 2                                 ; 12C   14
+  set_color BLACK                         ; 4C
+  delay 2                                 ; 12C
   nop                                     ; 1C
-  nop                                     ; 1C
+  nop                                     ; 1C  (eol)
   h_front_porch                           ; 48C
   nop
   nop
@@ -342,8 +342,10 @@ v_bp:
   .ENDM
 
 
-; Debounce function: avoid bouncing when the pattern switch button
-; is pressed
+  ;------------------------------------------------------------
+  ; debounce: avoid bouncing when the pattern switch button
+  ; is pressed
+  ;------------------------------------------------------------
 debounce:
   delay 255                               ; 1020C (63us) (maybe a bit shot: could be increased)
   sbic INPUTS_PIN, PATTERN_SWITCH         ; 1C if switch is released, 2C otherwise
@@ -351,7 +353,9 @@ debounce:
   rjmp debounce                           ; 2C
 
 
-; Main function
+  ;------------------------------------------------------------
+  ; Main function
+  ;------------------------------------------------------------
 main:
   ; Set PATTERN_SWITCH pin as a PULLUP input
   cbi INPUTS_DDR, PATTERN_SWITCH
@@ -374,7 +378,9 @@ loop:
   rjmp loop
 
 
-; Draw an 8 colored bars patter
+  ;------------------------------------------------------------
+  ; Draw an 8 colored bars patter
+  ;------------------------------------------------------------
 pattern_bars:
   v_sync
   v_back_porch
@@ -410,7 +416,9 @@ pattern_bar_lines_done:
   ret
 
 
-; Draw a grid pattern
+  ;------------------------------------------------------------
+  ; Draw a grid pattern
+  ;------------------------------------------------------------
 pattern_grid:
   v_sync
 
@@ -451,7 +459,10 @@ pattern_grid_back_porch_loop:
   call debounce
   ret
 
- ; Draw a grid pattern
+
+  ;------------------------------------------------------------
+  ; Draw a cross pattern
+  ;------------------------------------------------------------
 pattern_cross:
   v_sync
 
@@ -482,7 +493,10 @@ pattern_cross_back_porch_loop:
   call debounce
   ret
 
-   ; Draw a dots pattern
+
+  ;------------------------------------------------------------
+  ; Draw a dots pattern
+  ;------------------------------------------------------------
 pattern_dots:
   v_sync
 
